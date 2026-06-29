@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VentureIQ</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #1c1c1c;
+    --surface:  #242424;
+    --card:     #2c2c2c;
+    --border:   #333;
+    --border2:  #2e2e2e;
+    --accent:   #d4a96a;
+    --asoft:    rgba(212,169,106,0.1);
+    --text:     #e0e0e0;
+    --sub:      #888;
+    --dim:      #555;
+    --green:    #5a9e72;
+    --red:      #b06060;
+    --yellow:   #b89050;
+    --pw:       400px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;height:100vh;display:flex;overflow:hidden;}
+
+  /* MAIN */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;transition:margin-right .3s ease;}
+  .main.open{margin-right:var(--pw);}
+
+  /* HEADER */
+  header{height:48px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;}
+  .logo{font-weight:600;font-size:14px;letter-spacing:-.3px;}
+  .logo span{color:var(--accent);}
+  .hright{display:flex;align-items:center;gap:12px;}
+  .htag{font-size:10px;color:var(--dim);padding:2px 7px;border:1px solid var(--border);border-radius:3px;letter-spacing:.3px;}
+  .hbtn{background:transparent;border:1px solid var(--border);border-radius:5px;padding:4px 10px;font-size:11px;color:var(--sub);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;}
+  .hbtn.save{background:var(--accent);color:#1c1c1c;border-color:var(--accent);font-weight:600;}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:50;}
+  .modal-backdrop.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:420px;max-width:90vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border2);flex-shrink:0;}
+  .modal-title{font-size:13px;font-weight:600;color:var(--text);}
+  .modal-body{padding:16px;overflow-y:auto;}
+  .modal-note{font-size:11px;color:var(--sub);line-height:1.6;margin-bottom:16px;}
+  .mlabel{display:block;font-size:11px;color:var(--sub);margin:12px 0 6px;}
+  .mlabel a{color:var(--accent);text-decoration:none;font-size:10px;}
+  .mlabel a:hover{text-decoration:underline;}
+  .minput{width:100%;background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:8px 10px;font-size:12px;color:var(--text);font-family:'Inter',sans-serif;}
+  .minput:focus{outline:none;border-color:var(--accent);}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+  .modal-status{font-size:11px;margin-top:10px;text-align:right;color:var(--green);}
+  .modal-status.err{color:var(--red);}
+  .hbtn:hover{color:var(--text);border-color:#444;}
+
+  /* CHAT */
+  .chat{flex:1;overflow-y:auto;padding:0 0 160px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+  .chat::-webkit-scrollbar{width:3px;}
+  .chat::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+  /* WELCOME */
+  .welcome{max-width:560px;margin:72px auto 0;padding:0 24px;text-align:center;}
+  .welcome h1{font-size:20px;font-weight:500;letter-spacing:-.4px;margin-bottom:8px;color:var(--text);}
+  .welcome p{color:var(--sub);font-size:12px;line-height:1.7;margin-bottom:24px;}
+  .ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left;}
+  .ex{background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;cursor:pointer;font-size:11px;color:var(--sub);line-height:1.5;transition:all .15s;}
+  .ex:hover{border-color:var(--border);color:var(--text);background:var(--card);}
+
+  /* MESSAGES */
+  .row{max-width:640px;margin:0 auto;padding:16px 24px 0;}
+  .user-wrap{display:flex;justify-content:flex-end;margin-bottom:16px;}
+  .user-bubble{background:var(--surface);border:1px solid var(--border2);border-radius:14px 14px 3px 14px;padding:9px 14px;max-width:68%;font-size:13px;line-height:1.6;color:var(--text);}
+
+  /* PIPELINE */
+  .pipeline{background:var(--surface);border:1px solid var(--border2);border-radius:10px;overflow:hidden;margin-bottom:6px;}
+  .pstep{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border2);transition:background .2s;}
+  .pstep:last-child{border-bottom:none;}
+  .pstep.active{background:var(--asoft);}
+  .pstep.done{opacity:.45;}
+  .pname{font-size:12px;font-weight:500;color:var(--text);flex:1;}
+  .pdesc{font-size:11px;color:var(--dim);}
+  .pst{font-size:11px;font-weight:500;}
+  .sw{color:var(--dim);}
+  .sr{color:var(--accent);animation:blink 1.1s infinite;}
+  .sd{color:var(--green);}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+  /* AGENT CARDS */
+  .acard{background:var(--surface);border:1px solid var(--border2);border-radius:8px;overflow:hidden;margin-bottom:4px;transition:border-color .15s;}
+  .acard:hover{border-color:var(--border);}
+  .ahead{display:flex;align-items:center;gap:0;padding:10px 14px;cursor:pointer;user-select:none;}
+  .aname{font-size:12px;font-weight:500;color:var(--text);flex:1;}
+  .apat{font-size:10px;color:var(--dim);border:1px solid var(--border2);border-radius:3px;padding:1px 6px;letter-spacing:.3px;margin-right:6px;}
+  .ascore{font-size:11px;font-weight:600;color:var(--sub);margin-right:8px;}
+  .achev{font-size:9px;color:var(--dim);transition:transform .2s;}
+  .achev.open{transform:rotate(180deg);}
+  .abody{display:none;padding:0 14px 12px;border-top:1px solid var(--border2);}
+  .abody.open{display:block;}
+  .aout{font-size:11.5px;line-height:1.85;color:var(--sub);white-space:pre-wrap;word-break:break-word;padding-top:10px;}
+  .aout b{color:var(--text);font-weight:500;}
+
+  /* VIEW VERDICT BTN */
+  .vbtn{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:5px 11px;border-radius:5px;background:var(--asoft);border:1px solid rgba(212,169,106,.2);color:var(--accent);cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-top:10px;}
+  .vbtn:hover{background:rgba(212,169,106,.16);}
+
+  /* PANEL */
+  .panel{position:fixed;top:0;right:0;bottom:0;width:var(--pw);background:var(--surface);border-left:1px solid var(--border2);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s ease;z-index:200;}
+  .panel.open{transform:translateX(0);}
+  .ph{height:48px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;}
+  .ph-title{font-size:13px;font-weight:500;color:var(--text);}
+  .ph-close{background:transparent;border:1px solid var(--border);border-radius:5px;width:26px;height:26px;cursor:pointer;color:var(--sub);font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'Inter',sans-serif;}
+  .ph-close:hover{background:var(--card);color:var(--text);}
+  .ptabs{display:flex;border-bottom:1px solid var(--border2);padding:0 16px;}
+  .ptab{font-size:12px;font-weight:500;padding:9px 12px;cursor:pointer;color:var(--dim);border-bottom:2px solid transparent;transition:all .15s;user-select:none;}
+  .ptab.active{color:var(--text);border-bottom-color:var(--accent);}
+  .ptab:hover:not(.active){color:var(--sub);}
+  .pbody{flex:1;overflow-y:auto;padding:18px 16px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+  .ptc{display:none;}
+  .ptc.active{display:block;}
+
+  /* VERDICT PANEL */
+  .vbadge{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:3px 10px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;}
+  .vgo  {background:rgba(90,158,114,.1);color:var(--green);border:1px solid rgba(90,158,114,.25);}
+  .vcond{background:rgba(184,144,80,.1);color:var(--yellow);border:1px solid rgba(184,144,80,.25);}
+  .vpiv {background:rgba(176,96,96,.08);color:var(--red);border:1px solid rgba(176,96,96,.2);}
+  .vno  {background:rgba(176,96,96,.12);color:var(--red);border:1px solid rgba(176,96,96,.25);}
+  .vcontent{font-size:12px;line-height:1.85;color:var(--sub);white-space:pre-wrap;word-break:break-word;}
+  .vcontent b{color:var(--text);font-weight:500;}
+  .srow{display:flex;gap:6px;margin-top:16px;}
+  .sbox{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:7px;padding:11px;text-align:center;}
+  .sl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px;font-weight:600;}
+  .sv{font-size:18px;font-weight:600;letter-spacing:-.3px;}
+  .sg{color:var(--green);}
+  .sn{color:var(--sub);}
+  .sr2{color:var(--red);}
+  .pdfbtn{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:5px 11px;border-radius:5px;background:var(--card);border:1px solid var(--border);color:var(--sub);cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;margin-top:14px;}
+  .pdfbtn:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* HISTORY */
+  .hlist{display:flex;flex-direction:column;gap:5px;margin-top:4px;}
+  .hitem{background:var(--card);border:1px solid var(--border2);border-radius:7px;padding:9px 11px;cursor:pointer;transition:border-color .15s;}
+  .hitem:hover{border-color:var(--border);}
+  .hidea{font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hmeta{font-size:10px;color:var(--dim);display:flex;gap:8px;align-items:center;}
+  .hverd{font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;}
+  .hempty{font-size:12px;color:var(--dim);text-align:center;padding:24px 0;}
+  .toggle-btn{background:transparent;border:none;border-radius:4px;padding:3px 8px;font-size:10px;font-weight:500;color:var(--dim);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;letter-spacing:.3px;}
+  .toggle-btn.active{background:var(--border);color:var(--text);}
+  .toggle-btn:hover:not(.active){color:var(--sub);}
+  .hmrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .hcount{font-size:11px;color:var(--dim);}
+
+  /* INPUT */
+  .inwrap{position:fixed;bottom:0;left:0;right:0;padding:10px 24px 18px;background:linear-gradient(to top,var(--bg) 65%,transparent);transition:right .3s;z-index:100;}
+  .inwrap.open{right:var(--pw);}
+  .ininner{max-width:640px;margin:0 auto;}
+  .inbox{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 13px;display:flex;gap:10px;align-items:flex-end;transition:border-color .15s;}
+  .inbox:focus-within{border-color:#3a3a3a;}
+  #inp{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;resize:none;max-height:120px;line-height:1.6;}
+  #inp::placeholder{color:var(--dim);}
+  #sbtn{background:var(--accent);border:none;border-radius:6px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;opacity:.9;}
+  #sbtn:hover:not(:disabled){opacity:1;transform:translateY(-1px);}
+  #sbtn:disabled{background:var(--border);cursor:not-allowed;opacity:1;}
+  #sbtn svg{width:14px;height:14px;fill:white;}
+  .inhint{text-align:center;font-size:10px;color:var(--dim);margin-top:5px;}
+
+  /* ERROR */
+  .err{background:rgba(176,96,96,.07);border:1px solid rgba(176,96,96,.2);border-radius:7px;padding:9px 13px;font-size:12px;color:var(--red);}
+
+  @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .fi{animation:fi .25s ease;}
+
+  @media print{
+    body{background:white!important;color:black!important;}
+    header,.inwrap,.panel,.vbtn{display:none!important;}
+    .main{margin-right:0!important;}
+    .abody{display:block!important;}
+    .chat{overflow:visible!important;padding-bottom:0!important;}
+    .acard,.pipeline{border:1px solid #ddd!important;background:white!important;}
+    .aout,.vcontent{color:#333!important;}
+    .aname{color:black!important;}
+    .user-bubble{background:#f5f5f5!important;color:black!important;border:1px solid #ddd!important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="main" id="main">
+  <header>
+    <div class="logo">Venture<span>IQ</span></div>
+    <div class="hright">
+      <span class="htag">ReAct</span>
+      <span class="htag">Tool Use</span>
+      <span class="htag">Reflection</span>
+      <button class="hbtn" onclick="openHistory()">History</button>
+      <button class="hbtn" onclick="openTools()">Tools</button>
+      <button class="hbtn" onclick="openSettings()">Settings</button>
+    </div>
+  </header>
+
+  <div class="chat" id="chat">
+    <div class="welcome" id="welcome">
+      <h1>What's your startup idea?</h1>
+      <p>Three specialist AI agents evaluate your idea across market opportunity, competitive intelligence, and risk — delivering a structured due diligence report.</p>
+      <div class="ex-grid" id="ex-grid"></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel">
+  <div class="ph">
+    <div class="ph-title">Report</div>
+    <button class="ph-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="ptabs">
+    <div class="ptab active" id="tab-v" onclick="switchTab('v')">Verdict</div>
+    <div class="ptab" id="tab-h" onclick="switchTab('h')">History</div>
+    <div class="ptab" id="tab-t" onclick="switchTab('t')">Tools</div>
+  </div>
+  <div class="pbody">
+    <div class="ptc active" id="tc-v"></div>
+    <div class="ptc" id="tc-h"></div>
+    <div class="ptc" id="tc-t"></div>
+  </div>
+</div>
+
+<div class="inwrap" id="inwrap">
+  <div class="ininner">
+    <div class="inbox">
+      <textarea id="inp" rows="1" placeholder="" oninput="resize(this)" onkeydown="kdown(event)"></textarea>
+      <button id="sbtn" onclick="analyze()">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+    <div class="inhint">Enter to send · Shift+Enter for new line</div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="settingsBackdrop" onclick="closeSettings(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div class="modal-title">Settings — Your API Keys</div>
+      <button class="ph-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-note">
+        VentureIQ runs on your own API keys — they're stored only in your browser
+        (never sent anywhere except directly to the analysis backend) and are never saved on any server.
+      </p>
+
+      <label class="mlabel">Groq API Key <a href="https://console.groq.com/keys" target="_blank" rel="noopener">Get one free →</a></label>
+      <input type="password" id="set-groq" class="minput" placeholder="gsk_...">
+
+      <label class="mlabel">Google Custom Search API Key <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Get one →</a></label>
+      <input type="password" id="set-gkey" class="minput" placeholder="AIza...">
+
+      <label class="mlabel">Google Custom Search Engine ID (CX) <a href="https://programmablesearchengine.google.com/controlpanel/all" target="_blank" rel="noopener">Get one →</a></label>
+      <input type="text" id="set-gcx" class="minput" placeholder="e.g. 0123456789abcdef0">
+
+      <div class="modal-actions">
+        <button class="hbtn" onclick="closeSettings()">Cancel</button>
+        <button class="hbtn save" onclick="saveSettings()">Save</button>
+      </div>
+      <div id="set-status" class="modal-status"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ⚙️ Set this to your deployed backend URL (e.g. "https://ventureiq-backend.up.railway.app")
+// Leave as-is for local development.
+const API_BASE = "http://127.0.0.1:8000";
+const API = API_BASE + "/analyze";
+const HKEY = "viq_history";
+const SKEY = "viq_settings";
+let _lastAgents = null;
+
+function getSettings(){
+  try{ return JSON.parse(localStorage.getItem(SKEY)) || {}; }catch{ return {}; }
+}
+function openSettings(){
+  const s=getSettings();
+  document.getElementById('set-groq').value = s.groq_api_key || '';
+  document.getElementById('set-gkey').value = s.google_search_api_key || '';
+  document.getElementById('set-gcx').value  = s.google_search_cx || '';
+  document.getElementById('set-status').textContent='';
+  document.getElementById('settingsBackdrop').classList.add('open');
+}
+function closeSettings(e){
+  if(e) e.preventDefault();
+  document.getElementById('settingsBackdrop').classList.remove('open');
+}
+function saveSettings(){
+  const groq=document.getElementById('set-groq').value.trim();
+  const gkey=document.getElementById('set-gkey').value.trim();
+  const gcx=document.getElementById('set-gcx').value.trim();
+  const status=document.getElementById('set-status');
+  if(!groq || !gkey || !gcx){
+    status.textContent='All three fields are required.';
+    status.className='modal-status err';
+    return;
+  }
+  localStorage.setItem(SKEY, JSON.stringify({groq_api_key:groq, google_search_api_key:gkey, google_search_cx:gcx}));
+  status.textContent='Saved — keys are stored in this browser only.';
+  status.className='modal-status';
+  setTimeout(()=>closeSettings(), 700);
+}
+
+const EXAMPLES = [
+  "Solar panel cleaning drones in Pakistan",
+  "AI-powered legal document review for SMEs",
+  "Subscription box for Pakistani artisan crafts",
+  "On-demand home chef booking app",
+  "Hyperlocal grocery delivery for apartments",
+  "Mental health platform for university students",
+  "Peer-to-peer car rental in Karachi",
+  "EV charging network for Pakistan",
+  "Online tutoring for O/A Level students",
+  "Smart parking system using IoT sensors",
+  "Freelance visa processing for remote workers",
+  "AgriTech connecting farmers directly to buyers",
+  "B2B inventory management SaaS for restaurants",
+  "Drone delivery for rural medical supplies",
+  "Gamified financial literacy app for Gen Z",
+  "3D-printed affordable prosthetics startup",
+];
+
+const PLACEHOLDERS = [
+  "Describe your startup idea...",
+  "What problem are you solving?",
+  "Got a business idea? Let's stress-test it.",
+  "Think you found a gap in the market?",
+  "What's your unfair advantage?",
+  "Is this the next big thing? Let's find out.",
+  "Warning: agents may crush your dreams.",
+  "Pitch it here. We won't judge... much.",
+  "What's keeping you up at 2am?",
+  "Ready to validate before you build?",
+];
+
+// Random examples
+function shuffle(a){return [...a].sort(()=>Math.random()-.5);}
+function renderExamples(){
+  const g = document.getElementById('ex-grid');
+  if(!g) return;
+  shuffle(EXAMPLES).slice(0,4).forEach(e=>{
+    const d = document.createElement('div');
+    d.className='ex'; d.textContent=e;
+    d.onclick=()=>{const i=document.getElementById('inp');i.value=e;resize(i);i.focus();};
+    g.appendChild(d);
+  });
+}
+
+// Typewriter
+let twI=0,twC=0,twD=false;
+function typewriter(){
+  const el=document.getElementById('inp');
+  if(!el||document.activeElement===el) return;
+  const msg=PLACEHOLDERS[twI];
+  if(!twD){el.placeholder=msg.slice(0,++twC);if(twC===msg.length){twD=true;setTimeout(typewriter,1800);return;}}
+  else{el.placeholder=msg.slice(0,--twC);if(twC===0){twD=false;twI=(twI+1)%PLACEHOLDERS.length;setTimeout(typewriter,400);return;}}
+  setTimeout(typewriter,twD?38:58);
+}
+
+window.addEventListener('load',()=>{
+  renderExamples();
+  setTimeout(typewriter,800);
+  const s=getSettings();
+  if(!s.groq_api_key || !s.google_search_api_key || !s.google_search_cx){
+    setTimeout(()=>{
+      openSettings();
+      const status=document.getElementById('set-status');
+      status.textContent='Welcome! Add your own API keys to get started — they stay in your browser only.';
+      status.className='modal-status';
+    },400);
+  }
+});
+
+function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function kdown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();analyze();}}
+
+function push(el){
+  document.getElementById('welcome')?.remove();
+  document.getElementById('chat').appendChild(el);
+  el.scrollIntoView({behavior:'smooth',block:'end'});
+}
+
+// Panel
+function openPanel(html){
+  document.getElementById('tc-v').innerHTML=html;
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('main').classList.add('open');
+  document.getElementById('inwrap').classList.add('open');
+  switchTab('v');
+}
+function closePanel(){
+  ['panel','main','inwrap'].forEach(id=>document.getElementById(id).classList.remove('open'));
+}
+function openHistory(){
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('main').classList.add('open');
+  document.getElementById('inwrap').classList.add('open');
+  switchTab('h');
+}
+function switchTab(t){
+  ['v','h','t'].forEach(x=>{
+    document.getElementById(`tab-${x}`).classList.toggle('active',x===t);
+    document.getElementById(`tc-${x}`).classList.toggle('active',x===t);
+  });
+  if(t==='h') renderHistory();
+  if(t==='t') renderTools();
+}
+
+function openTools(){
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('main').classList.add('open');
+  document.getElementById('inwrap').classList.add('open');
+  switchTab('t');
+}
+
+async function renderTools(){
+  const tc=document.getElementById('tc-t');
+  tc.innerHTML=`<div style="font-size:11px;color:var(--dim);padding:8px 0;">Loading...</div>`;
+  try{
+    const res=await fetch(API_BASE + '/tools');
+    const data=await res.json();
+    const PAT_COLOR={'ReAct':'var(--accent)','Tool Use':'var(--green)','Reflection':'var(--red)'};
+    tc.innerHTML=`
+      <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:12px;">
+        ${data.total_agents} Agents Registered
+      </div>
+      <div style="font-size:11px;color:var(--sub);background:var(--card);border:1px solid var(--border2);border-radius:7px;padding:9px 11px;margin-bottom:12px;line-height:1.6;">
+        <span style="color:var(--text);font-weight:500;">Orchestrator</span><br>
+        ${data.orchestrator}
+      </div>
+      ${data.agents.map(a=>`
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:7px;padding:10px 12px;margin-bottom:6px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:12px;font-weight:500;color:var(--text);flex:1;">${a.name}</span>
+            <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;border:1px solid;color:${PAT_COLOR[a.pattern]||'var(--sub)'};border-color:${PAT_COLOR[a.pattern]||'var(--border)'};">${a.pattern}</span>
+          </div>
+          <div style="font-size:11px;color:var(--dim);margin-bottom:8px;line-height:1.5;">${a.description}</div>
+          ${a.tools.length?`
+            <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:5px;">Tools</div>
+            ${a.tools.map(t=>`
+              <div style="background:var(--bg);border:1px solid var(--border2);border-radius:5px;padding:7px 9px;margin-bottom:3px;">
+                <div style="font-size:11px;font-weight:500;color:var(--text);margin-bottom:2px;">${t.name}</div>
+                <div style="font-size:10px;color:var(--dim);">${t.description}</div>
+                <div style="font-size:9px;color:var(--dim);margin-top:2px;opacity:.6;">${t.type}</div>
+              </div>`).join('')}`
+          :`<div style="font-size:10px;color:var(--dim);font-style:italic;">No external tools — uses LLM reasoning only</div>`}
+        </div>`).join('')}`;
+  }catch(e){
+    tc.innerHTML=`<div style="font-size:12px;color:var(--red);">Could not load tools. Make sure backend is running.</div>`;
+  }
+}
+
+// Verdict meta
+function vm(raw){
+  if(!raw) return{cls:'vcond',label:'Conditional Go'};
+  if(raw.includes('STRONG GO'))      return{cls:'vgo',  label:'Strong Go'};
+  if(raw.includes('CONDITIONAL GO')) return{cls:'vcond',label:'Conditional Go'};
+  if(raw.includes('PIVOT'))          return{cls:'vpiv', label:'Pivot Recommended'};
+  if(raw.includes('DO NOT'))         return{cls:'vno',  label:'Do Not Proceed'};
+  return{cls:'vcond',label:'Conditional Go'};
+}
+
+function fmt(t){
+  if(!t) return '';
+  t=t.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>');
+  t=t.replace(/^([A-Z][A-Z\s\d]+:)/gm,'<b>$1</b>');
+  return t;
+}
+
+// Pipeline
+const STEPS=[
+  {k:'market', n:'Market Analyst Agent', d:'Evaluating market size, timing and competition'},
+  {k:'research',n:'Research Agent',       d:'Searching for competitors and market data'},
+  {k:'critic',  n:'Critic Agent',         d:'Identifying risks and fatal flaws'},
+  {k:'synth',   n:'Orchestrator',         d:'Synthesizing final verdict'},
+];
+
+function buildPipeline(){
+  const w=document.createElement('div');w.className='row fi';
+  const p=document.createElement('div');p.className='pipeline';p.id='pipeline';
+  STEPS.forEach((s,i)=>{
+    p.innerHTML+=`<div class="pstep ${i===0?'active':''}" id="ps-${s.k}">
+      <div style="flex:1"><div class="pname">${s.n}</div><div class="pdesc">${s.d}</div></div>
+      <div class="pst ${i===0?'sr':'sw'}" id="pst-${s.k}">${i===0?'Running':'Waiting'}</div>
+    </div>`;
+  });
+  w.appendChild(p);return w;
+}
+
+function stepDone(k,nk){
+  const el=document.getElementById(`ps-${k}`),st=document.getElementById(`pst-${k}`);
+  if(el){el.classList.remove('active');el.classList.add('done');}
+  if(st){st.className='pst sd';st.textContent='Done';}
+  if(nk){
+    const ne=document.getElementById(`ps-${nk}`),ns=document.getElementById(`pst-${nk}`);
+    if(ne) ne.classList.add('active');
+    if(ns){ns.className='pst sr';ns.textContent='Running';}
+  }
+}
+
+async function analyze(){
+  const inp=document.getElementById('inp'),btn=document.getElementById('sbtn');
+  const idea=inp.value.trim();
+  if(!idea||btn.disabled) return;
+
+  const s=getSettings();
+  if(!s.groq_api_key || !s.google_search_api_key || !s.google_search_cx){
+    openSettings();
+    const status=document.getElementById('set-status');
+    status.textContent='Add your API keys before running an analysis.';
+    status.className='modal-status err';
+    return;
+  }
+
+  const ur=document.createElement('div');ur.className='row';
+  ur.innerHTML=`<div class="user-wrap"><div class="user-bubble">${idea}</div></div>`;
+  push(ur);
+  inp.value='';inp.style.height='auto';btn.disabled=true;
+  const pe=buildPipeline();push(pe);
+  const keys=['market','research','critic','synth'];
+  let idx=0;
+  const t=setInterval(()=>{if(idx<keys.length-1){stepDone(keys[idx],keys[idx+1]);idx++;}},2800);
+  try{
+    const res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      idea,
+      groq_api_key:s.groq_api_key,
+      google_search_api_key:s.google_search_api_key,
+      google_search_cx:s.google_search_cx
+    })});
+    clearInterval(t);keys.forEach(k=>stepDone(k,null));
+    if(!res.ok){
+      const errBody = await res.json().catch(()=>({}));
+      throw new Error(errBody.detail || `Server error ${res.status}`);
+    }
+    const data=await res.json();
+    setTimeout(()=>{document.getElementById('pipeline')?.closest('.row')?.remove();renderReport(data);},500);
+  }catch(e){
+    clearInterval(t);document.getElementById('pipeline')?.closest('.row')?.remove();
+    const er=document.createElement('div');er.className='row fi';
+    er.innerHTML=`<div class="err">${e.message} — Make sure the backend is running.</div>`;
+    push(er);
+  }
+  btn.disabled=false;
+  lockInput();
+}
+
+function lockInput(){
+  const inp=document.getElementById('inp'),btn=document.getElementById('sbtn');
+  inp.disabled=true;inp.placeholder='Analysis complete.';
+  btn.disabled=true;
+  const ininner=document.querySelector('.ininner');
+  if(document.getElementById('newbtn')) return;
+  const nb=document.createElement('button');
+  nb.id='newbtn';nb.textContent='+ New Analysis';
+  nb.style.cssText='display:block;margin:8px auto 0;background:transparent;border:1px solid var(--border);border-radius:5px;padding:5px 14px;font-size:11px;color:var(--sub);cursor:pointer;font-family:Inter,sans-serif;transition:all .15s;';
+  nb.onmouseover=()=>nb.style.color='var(--text)';
+  nb.onmouseleave=()=>nb.style.color='var(--sub)';
+  nb.onclick=resetChat;
+  ininner.appendChild(nb);
+}
+
+function resetChat(){
+  document.getElementById('chat').innerHTML='<div class="welcome" id="welcome"><h1>What\'s your startup idea?</h1><p>Three specialist AI agents evaluate your idea across market opportunity, competitive intelligence, and risk — delivering a structured due diligence report.</p><div class="ex-grid" id="ex-grid"></div></div>';
+  renderExamples();
+  const inp=document.getElementById('inp'),btn=document.getElementById('sbtn');
+  inp.disabled=false;inp.value='';inp.style.height='auto';
+  btn.disabled=false;
+  document.getElementById('newbtn')?.remove();
+  closePanel();
+  setTimeout(typewriter,400);
+}
+
+function renderReport(data){
+  const agents=data.agents,final=data.final_report,id=Date.now();
+  const wrap=document.createElement('div');wrap.className='row fi';
+
+  const defs=[
+    {key:'market_analyst',name:'Market Analyst Agent',pat:'ReAct'},
+    {key:'research_agent',name:'Research Agent',      pat:'Tool Use'},
+    {key:'critic_agent',  name:'Critic Agent',        pat:'Reflection'},
+  ];
+
+  defs.forEach(d=>{
+    const a=agents[d.key];
+    const cid=`c-${d.key}-${id}`;
+    const sc=a.score&&a.score!=='N/A'?`<span class="ascore">${a.score}</span>`:'';
+
+    // Tool trace / metadata for each agent
+    let traceHtml='';
+
+    // Market Analyst — ReAct tool trace
+    if(d.key==='market_analyst'){
+      const fallbackBadge = a.fallback_used
+        ? `<div style="margin-bottom:8px;font-size:10px;color:var(--yellow);background:rgba(184,144,80,0.1);border:1px solid rgba(184,144,80,0.2);border-radius:4px;padding:3px 8px;display:inline-block;">⚠ ReAct agent fell back to simulated reasoning (LlamaIndex unavailable)</div>`
+        : '';
+      if(a.tool_trace && a.tool_trace.length){
+        traceHtml=`<div style="margin-top:10px;border-top:1px solid var(--border2);padding-top:10px;">
+          <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:600;">Tool Trace</div>
+          ${fallbackBadge}
+          ${a.tool_trace.map(t=>`
+            <div style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:8px 10px;margin-bottom:4px;">
+              <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:3px;">${t.tool}</div>
+              <div style="font-size:10px;color:var(--dim);margin-bottom:3px;">Input: ${t.input}</div>
+              <div style="font-size:10px;color:var(--sub);line-height:1.6;">${t.output_preview}</div>
+            </div>`).join('')}
+        </div>`;
+      } else {
+        traceHtml=`<div style="margin-top:10px;border-top:1px solid var(--border2);padding-top:10px;">${fallbackBadge}</div>`;
+      }
+    }
+
+    // Research Agent — Tool Use: show queries and result count
+    if(d.key==='research_agent' && a.queries_used && a.queries_used.length){
+      traceHtml=`<div style="margin-top:10px;border-top:1px solid var(--border2);padding-top:10px;">
+        <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:600;">Tool Use — Google Search</div>
+        <div style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:8px 10px;margin-bottom:4px;">
+          <div style="font-size:10px;color:var(--dim);margin-bottom:4px;">Queries sent to search tool:</div>
+          ${a.queries_used.map(q=>`<div style="font-size:11px;color:var(--text);margin-bottom:2px;">→ ${q}</div>`).join('')}
+          <div style="font-size:10px;color:var(--dim);margin-top:6px;">${a.raw_results_count || 0} results retrieved</div>
+        </div>
+      </div>`;
+    }
+
+    // Critic Agent — Reflection: show that search grounded the critique
+    if(d.key==='critic_agent'){
+      const groundedBadge = a.risk_data_found
+        ? `<div style="font-size:10px;color:var(--green);background:rgba(90,158,114,0.1);border:1px solid rgba(90,158,114,0.2);border-radius:4px;padding:3px 8px;display:inline-block;margin-bottom:8px;">✓ Critique grounded in real-world search data</div>`
+        : `<div style="font-size:10px;color:var(--dim);background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:3px 8px;display:inline-block;margin-bottom:8px;">Critique based on LLM reasoning only</div>`;
+      traceHtml=`<div style="margin-top:10px;border-top:1px solid var(--border2);padding-top:10px;">
+        <div style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-weight:600;">Reflection Pattern</div>
+        ${groundedBadge}
+        <div style="font-size:10px;color:var(--sub);line-height:1.6;">Initial critique → reflection → refined output. Two LLM passes.</div>
+      </div>`;
+    }
+
+    const card=document.createElement('div');card.className='acard';
+    card.innerHTML=`
+      <div class="ahead" onclick="toggle('${cid}')">
+        <span class="aname">${d.name}</span>
+        <span class="apat">${d.pat}</span>
+        ${sc}
+        <span class="achev" id="ch-${cid}">▼</span>
+      </div>
+      <div class="abody" id="${cid}">
+        <div class="aout">${fmt(a.output||'')}</div>
+        ${traceHtml}
+      </div>`;
+    wrap.appendChild(card);
+  });
+
+  const v=vm(final.raw);
+  const vb=document.createElement('button');vb.className='vbtn';
+  vb.textContent='View Final Verdict →';
+  vb.onclick=()=>showVerdict(final,v,null);
+  wrap.appendChild(vb);
+  push(wrap);
+  _lastAgents = data.agents;
+  if(!data._fromHistory) saveHist(data.startup_idea,final,v,data.agents);
+}
+
+function toggle(id){
+  document.getElementById(id)?.classList.toggle('open');
+  document.getElementById('ch-'+id)?.classList.toggle('open');
+}
+
+function showVerdict(final,v,idea){
+  const om=(final.raw||'').match(/OVERALL SCORE.*?(\d+(?:\.\d+)?\/10|\d+(?:\.\d+)?(?=\s*\/10))/i);
+  const ov=om?om[1]+(om[1].includes('/')?'':'/10'):'—';
+  openPanel(`
+    <div class="vbadge ${v.cls}">${v.label}</div>
+    <div class="vcontent">${fmt(final.raw||'')}</div>
+    <div class="srow">
+      <div class="sbox"><div class="sl">Market</div><div class="sv sg">${final.market_score||'—'}</div></div>
+      <div class="sbox"><div class="sl">Overall</div><div class="sv sn">${ov}</div></div>
+      <div class="sbox"><div class="sl">Risk</div><div class="sv sr2">${final.risk_score||'—'}</div></div>
+    </div>
+    <button class="pdfbtn" id="export-btn">Export PDF</button>`);
+  document.getElementById('export-btn').onclick = () => exportReport(final, v, ov);
+  if(idea) saveHist(idea,final,v,_lastAgents);
+}
+
+function exportReport(final, v, ov){
+  const agents = _lastAgents;
+  const agentDefs = [
+    {key:'market_analyst', name:'Market Analyst Agent', pat:'ReAct'},
+    {key:'research_agent', name:'Research Agent',       pat:'Tool Use'},
+    {key:'critic_agent',   name:'Critic Agent',         pat:'Reflection'},
+  ];
+
+  let agentSections = '';
+  if(agents){
+    agentDefs.forEach(d => {
+      const a = agents[d.key];
+      if(!a) return;
+      let meta = '';
+      if(d.key==='market_analyst' && a.tool_trace && a.tool_trace.length){
+        meta = '<div class="meta">Tools called: ' + a.tool_trace.map(t=>t.tool+' → "'+t.input+'"').join(', ') + '</div>';
+      }
+      if(d.key==='research_agent' && a.queries_used && a.queries_used.length){
+        meta = '<div class="meta">Search queries: ' + a.queries_used.join(' | ') + ' (' + (a.raw_results_count||0) + ' results)</div>';
+      }
+      if(d.key==='critic_agent'){
+        meta = '<div class="meta">' + (a.risk_data_found ? '✓ Grounded in real search data' : 'LLM reasoning only') + '</div>';
+      }
+      const score = (a.score && a.score!=='N/A') ? ' &nbsp;·&nbsp; Score: '+a.score : '';
+      agentSections += `
+        <div class="agent-block">
+          <div class="agent-header">${d.name} <span class="pat">${d.pat}</span>${score}</div>
+          ${meta}
+          <div class="content">${(a.output||'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>
+        </div>`;
+    });
+  }
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>VentureIQ Report</title>
+<style>
+  body{font-family:Inter,sans-serif;font-size:13px;max-width:740px;margin:40px auto;padding:0 24px;color:#1a1a1a;line-height:1.7;}
+  h1{font-size:18px;font-weight:600;margin-bottom:4px;}
+  .sub{color:#666;font-size:12px;margin-bottom:24px;}
+  .badge{display:inline-block;padding:4px 12px;border-radius:4px;font-size:12px;font-weight:600;margin-bottom:16px;}
+  .go{background:#e6f4ec;color:#2d7a4f;} .cgo{background:#fef9e7;color:#7d6008;} .pivot{background:#fef3e2;color:#8a4a00;} .stop{background:#fdecea;color:#8a2222;}
+  .scores{display:flex;gap:20px;margin:16px 0 24px;padding:16px;background:#f8f8f8;border-radius:8px;}
+  .sbox{text-align:center;flex:1;}
+  .sl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;}
+  .sv{font-size:18px;font-weight:700;margin-top:4px;}
+  .sg{color:#2d7a4f;} .sn{color:#1a1a1a;} .sr2{color:#b06060;}
+  .section-title{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin:28px 0 12px;}
+  .agent-block{border:1px solid #e5e5e5;border-radius:8px;padding:14px 16px;margin-bottom:10px;}
+  .agent-header{font-size:13px;font-weight:600;color:#1a1a1a;margin-bottom:4px;}
+  .pat{font-size:10px;color:#888;border:1px solid #ddd;border-radius:3px;padding:1px 6px;margin-left:6px;font-weight:400;letter-spacing:.3px;}
+  .meta{font-size:11px;color:#888;margin-bottom:8px;padding:4px 8px;background:#f8f8f8;border-radius:4px;}
+  .content{white-space:pre-wrap;word-break:break-word;color:#333;font-size:12px;margin-top:8px;}
+  .exec-block{margin-top:8px;}
+  hr{border:none;border-top:1px solid #eee;margin:24px 0;}
+  @media print{body{margin:20px;} .agent-block{break-inside:avoid;}}
+</style>
+</head>
+<body>
+<h1>VentureIQ Due Diligence Report</h1>
+<div class="sub">Generated ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+<span class="badge ${v.cls}">${v.label}</span>
+<div class="scores">
+  <div class="sbox"><div class="sl">Market Score</div><div class="sv sg">${final.market_score||'—'}</div></div>
+  <div class="sbox"><div class="sl">Overall Score</div><div class="sv sn">${ov}</div></div>
+  <div class="sbox"><div class="sl">Risk Score</div><div class="sv sr2">${final.risk_score||'—'}</div></div>
+</div>
+<hr/>
+${agentSections ? '<div class="section-title">Specialist Agent Reports</div>' + agentSections + '<hr/>' : ''}
+<div class="section-title">Executive Report</div>
+<div class="exec-block content">${(final.raw||'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>
+</body>
+</html>`;
+  const w = window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>w.print(), 400);
+}
+
+function openPanel(html){
+  document.getElementById('tc-v').innerHTML=html;
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('main').classList.add('open');
+  document.getElementById('inwrap').classList.add('open');
+  switchTab('v');
+}
+function closePanel(){
+  ['panel','main','inwrap'].forEach(id=>document.getElementById(id).classList.remove('open'));
+}
+function openHistory(){
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('main').classList.add('open');
+  document.getElementById('inwrap').classList.add('open');
+  switchTab('h');
+}
+function getHist(){try{return JSON.parse(localStorage.getItem(HKEY))||[];}catch{return[];}}
+function saveHist(idea,final,v,agents){
+  const h=getHist();
+  h.unshift({id:Date.now(),idea,verdict:v.label,vcls:v.cls,ms:final.market_score,rs:final.risk_score,raw:final.raw,
+    agents:agents||null,
+    date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})});
+  localStorage.setItem(HKEY,JSON.stringify(h.slice(0,20)));
+}
+function renderHistory(){
+  const h=getHist(),tc=document.getElementById('tc-h');
+  if(!h.length){tc.innerHTML=`<div class="hempty">No evaluations yet.</div>`;return;}
+  tc.innerHTML=`<div class="hmrow"><span class="hcount">${h.length} saved</span><button class="hclear" onclick="clearHist()">Clear all</button></div>
+    <div class="hlist">${h.map(x=>`
+      <div class="hitem" onclick="loadHist(${x.id})">
+        <div class="hidea">${x.idea}</div>
+        <div class="hmeta">
+          <span>${x.date}</span>
+          <span class="hverd ${x.vcls}">${x.verdict}</span>
+          <span>M:${x.ms||'—'} R:${x.rs||'—'}</span>
+        </div>
+      </div>`).join('')}
+    </div>`;
+}
+function loadHist(id){
+  const x=getHist().find(h=>h.id===id);
+  if(!x) return;
+  const v={cls:x.vcls,label:x.verdict};
+  const final={raw:x.raw,market_score:x.ms,risk_score:x.rs};
+
+  // Restore full chat view if we have agent data
+  if(x.agents){
+    resetChat();
+    // Show the user bubble
+    const ur=document.createElement('div');ur.className='row';
+    ur.innerHTML=`<div class="user-wrap"><div class="user-bubble">${x.idea}</div></div>`;
+    push(ur);
+    // Re-render full agent cards + verdict button
+    renderReport({startup_idea:x.idea, agents:x.agents, final_report:final, _fromHistory:true});
+    lockInput();
+  } else {
+    // Old history entries without agent data — just show verdict panel
+    _lastAgents = null;
+    showVerdict(final,v,null);
+    switchTab('v');
+  }
+}
+function clearHist(){if(confirm('Clear all history?')){localStorage.removeItem(HKEY);renderHistory();}}
+</script>
+</body>
+</html>

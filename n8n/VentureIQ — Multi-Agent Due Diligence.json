@@ -1,0 +1,421 @@
+{
+  "name": "VentureIQ — Multi-Agent Due Diligence",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ventureiq",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "c8820b02-7237-4f98-9990-0b732fb5b7a7",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -480
+      ],
+      "webhookId": "fa416d19-a131-4fe9-ac07-f854ba46a2e0"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.idea }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a Market Analyst Agent evaluating startup ideas using the ReAct reasoning pattern.  Follow this exact structure:  THOUGHT 1: Who is the target customer? ACTION 1: Analyze the customer segment and pain point. OBSERVATION 1: [your observation]  THOUGHT 2: How large is the potential market? ACTION 2: Estimate TAM and growth trend. OBSERVATION 2: [your observation]  THOUGHT 3: Who are the existing competitors? ACTION 3: Identify key competitors and market saturation. OBSERVATION 3: [your observation]  THOUGHT 4: Is the timing right? ACTION 4: Evaluate market timing and trends. OBSERVATION 4: [your observation]  FINAL CONCLUSION: [4-5 sentences on market opportunity]  MARKET SCORE: X/10 — [one line justification]"
+            }
+          ]
+        }
+      },
+      "id": "82527e95-611d-48ec-b656-a017eb15c8bd",
+      "name": "Market Analyst Agent (ReAct)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        624,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "id": "2a018277-7c27-4a14-a5d8-ef4e0281033a",
+      "name": "Groq — Market Agent",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        704,
+        -256
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "vgubVMF5NYvNdeym",
+          "name": "Groq API 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Startup Idea: {{ $('Webhook').item.json.body.idea }}\n\nSearch for competitors and market data for this startup idea. Then provide:\n\n**SEARCH QUERIES USED:**\n• [query 1]\n• [query 2]\n\n**KEY FINDINGS:**\n• Finding 1: [specific insight]\n• Finding 2: [specific insight]\n• Finding 3: [specific insight]\n\n**COMPETITOR LANDSCAPE:**\n[3-4 sentences on existing players and market gaps]\n\n**RESEARCH SUMMARY:**\n[3-4 sentences on what this means for the startup]",
+        "options": {
+          "systemMessage": "You are a Research Agent implementing the Tool Use pattern. You have access to a web search tool. Use it to find real competitor data and market intelligence for the startup idea. Always use the search tool before providing your analysis — do not rely on training data alone."
+        }
+      },
+      "id": "188487e1-85ac-49c6-baad-af2b366dff62",
+      "name": "Research Agent (Tool Use)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        976,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "id": "b15e2248-ca5f-45b0-bce6-16a4912b2797",
+      "name": "Groq — Research Agent",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        992,
+        -256
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "vgubVMF5NYvNdeym",
+          "name": "Groq API 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Startup Idea: {{ $('Webhook').item.json.body.idea }}\n\nGenerate a harsh but fair initial critique of this startup idea. Cover:\n- Flawed assumptions\n- Market risks\n- Execution risks  \n- Financial risks\n- Why it might fail\n\nWrite 5-6 specific bullet points."
+      },
+      "id": "3f196f12-e20d-4ded-90dc-f807dd5da567",
+      "name": "Critic Agent — Initial Critique",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        1328,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "id": "cb669c85-430f-474b-975b-6a20b16adb38",
+      "name": "Groq — Critic Pass 1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        -256
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "vgubVMF5NYvNdeym",
+          "name": "Groq API 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You just wrote this initial critique of the startup idea:\n\n{{ $json.text }}\n\nNow REFLECT on your critique and produce a refined version.\n\n**REFLECTION NOTES:**\n[2-3 sentences: what did you miss or what was too harsh/not specific enough?]\n\n**FINAL CRITIQUE:**\n• [Risk point 1 — specific and detailed]\n• [Risk point 2 — specific and detailed]\n• [Risk point 3 — specific and detailed]\n• [Risk point 4 — specific and detailed]\n• [Risk point 5 — specific and detailed]\n\n**BIGGEST RISK:** [The single most fatal flaw in one sentence]\n\n**RISK SCORE:** [X/10] — [one line justification. 10 = extremely risky]"
+      },
+      "id": "aaf1f53d-1a36-4b3a-99aa-3d74265433fa",
+      "name": "Critic Agent — Reflection Pass",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        1680,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "id": "d251f4f6-5115-4d40-b0b0-a5a12065a35d",
+      "name": "Groq — Critic Pass 2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        -256
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "vgubVMF5NYvNdeym",
+          "name": "Groq API 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are VentureIQ's Orchestrator. Synthesize these 3 agent reports into a final executive verdict.\n\nSTARTUP IDEA: {{ $('Webhook').item.json.body.idea }}\n\nMARKET ANALYST OUTPUT:\n{{ $('Market Analyst Agent (ReAct)').item.json.text }}\n\nRESEARCH AGENT OUTPUT:\n{{ $('Research Agent (Tool Use)').item.json.output }}\n\nCRITIC AGENT OUTPUT:\n{{ $('Critic Agent — Reflection Pass').item.json.text }}\n\nRespond in this EXACT format:\n\n**EXECUTIVE SUMMARY:**\n[4-5 sentences giving overall picture of this startup viability]\n\n**STRENGTHS:**\n• [Strength 1]\n• [Strength 2]\n• [Strength 3]\n\n**WEAKNESSES:**\n• [Weakness 1]\n• [Weakness 2]\n• [Weakness 3]\n\n**OVERALL SCORE:** [X/10]\n\n**FINAL VERDICT:** [STRONG GO | CONDITIONAL GO | PIVOT RECOMMENDED | DO NOT PROCEED]\n\n**RECOMMENDATION:**\n[3-4 actionable sentences for the founder]"
+      },
+      "id": "18442bd5-b1ac-4db2-9b36-bac38c1dcc73",
+      "name": "Orchestrator — Final Synthesis",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        2032,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "id": "660a0be9-1525-4a09-8170-808da16f7902",
+      "name": "Groq — Orchestrator",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        2112,
+        -256
+      ],
+      "credentials": {
+        "groqApi": {
+          "id": "vgubVMF5NYvNdeym",
+          "name": "Groq API 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const idea = $('Webhook').item.json.body.idea;\nconst marketOutput = $('Market Analyst Agent (ReAct)').item.json.text || '';\nconst researchOutput = $('Research Agent (Tool Use)').item.json.output || '';\nconst criticInitial = $('Critic Agent — Initial Critique').item.json.text || '';\nconst criticFinal = $('Critic Agent — Reflection Pass').item.json.text || '';\nconst finalRaw = $('Orchestrator — Final Synthesis').item.json.text || '';\n\n// Extract market score\nconst marketMatch = marketOutput.match(/MARKET SCORE.*?(\\d+(?:\\.\\d+)?)\\/10/i);\nconst marketScore = marketMatch ? marketMatch[1] + '/10' : 'N/A';\n\n// Extract risk score\nconst riskMatch = criticFinal.match(/RISK SCORE.*?(\\d+(?:\\.\\d+)?)\\/10/i);\nconst riskScore = riskMatch ? riskMatch[1] + '/10' : 'N/A';\n\nreturn [{\n  json: {\n    startup_idea: idea,\n    agents: {\n      market_analyst: {\n        agent: 'Market Analyst Agent',\n        pattern: 'ReAct',\n        output: marketOutput,\n        score: marketScore,\n        tool_trace: []\n      },\n      research_agent: {\n        agent: 'Research Agent',\n        pattern: 'Tool Use',\n        output: researchOutput,\n        score: 'N/A',\n        tool_trace: []\n      },\n      critic_agent: {\n        agent: 'Critic Agent',\n        pattern: 'Reflection',\n        initial_critique: criticInitial,\n        output: criticFinal,\n        score: riskScore\n      }\n    },\n    final_report: {\n      raw: finalRaw,\n      market_score: marketScore,\n      risk_score: riskScore\n    }\n  }\n}];"
+      },
+      "id": "b96029fb-5b08-4c93-94ec-33d8116da1c7",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2384,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "5987c157-ef54-46d6-9bbe-18837c12f9da",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2608,
+        -480
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -256
+      ],
+      "id": "362a9ae1-e6c8-421d-a363-9e76be28437b",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "W167C8au4xbFYSec",
+          "name": "SerpAPI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Market Analyst Agent (ReAct)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Market Analyst Agent (ReAct)": {
+      "main": [
+        [
+          {
+            "node": "Research Agent (Tool Use)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Agent (Tool Use)": {
+      "main": [
+        [
+          {
+            "node": "Critic Agent — Initial Critique",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Critic Agent — Initial Critique": {
+      "main": [
+        [
+          {
+            "node": "Critic Agent — Reflection Pass",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Critic Agent — Reflection Pass": {
+      "main": [
+        [
+          {
+            "node": "Orchestrator — Final Synthesis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orchestrator — Final Synthesis": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq — Market Agent": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Market Analyst Agent (ReAct)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq — Research Agent": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Research Agent (Tool Use)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq — Critic Pass 1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Critic Agent — Initial Critique",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq — Critic Pass 2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Critic Agent — Reflection Pass",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq — Orchestrator": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Orchestrator — Final Synthesis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "Research Agent (Tool Use)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b2e9c210-f0c8-4f1d-82e6-de5116e604fc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0d49437153d3add7837b3445aa884d63d6534a19facc184fa2455c828227eb12"
+  },
+  "id": "HvdG-cutazYA2OkIw-d9M",
+  "tags": []
+}
