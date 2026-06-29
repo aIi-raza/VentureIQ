@@ -1,9 +1,9 @@
 import os
 from groq import Groq
-from dotenv import load_dotenv
+ 
 from tools.search_tool import google_search
 
-load_dotenv()
+
 
 
 def run_research_agent(startup_idea: str, groq_api_key: str, google_search_api_key: str, google_search_cx: str) -> dict:

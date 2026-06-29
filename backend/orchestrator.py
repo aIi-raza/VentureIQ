@@ -1,11 +1,11 @@
 import os
 from groq import Groq
-from dotenv import load_dotenv
+ 
 from agents.market_agent import run_market_agent
 from agents.research_agent import run_research_agent
 from agents.critic_agent import run_critic_agent
 
-load_dotenv()
+
 
 
 def run_orchestrator(startup_idea: str, keys: dict) -> dict:

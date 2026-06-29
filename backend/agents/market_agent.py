@@ -1,10 +1,10 @@
 import os
 import re
 from groq import Groq
-from dotenv import load_dotenv
+ 
 from duckduckgo_search import DDGS
 
-load_dotenv()
+
 
 # ── TOOLS ────────────────────────────────────────────────────────────────────
 
